@@ -172,3 +172,26 @@ def arkadas_aktiviteleri(g: dict):
             sonuc.extend(_veri["aktiviteler"].get(kid, [])[-5:])
     sonuc.sort(key=lambda x: x.get("tarih",""), reverse=True)
     return {"aktiviteler": sonuc[:50]}
+@app.get("/kontrol/{kullanici_id}")
+def bildirim_kontrol(kullanici_id: str):
+    bildirimler = []
+    for grup_id, grup in gruplar.items():
+        uyeler = grup.get("uyeler", [])
+        uye_idler = [u.get("id","") if isinstance(u, dict) else str(u) for u in uyeler]
+        if kullanici_id not in uye_idler:
+            continue
+        mesajlar = grup_mesajlari.get(grup_id, [])
+        if not mesajlar:
+            continue
+        son = mesajlar[-1]
+        if son.get("gonderen_id") == kullanici_id:
+            continue
+        bildirimler.append({
+            "tip": "mesaj",
+            "grup_id": grup_id,
+            "grup_adi": grup.get("adi", "Grup"),
+            "gonderen": son.get("gonderen_adi", "?"),
+            "icerik": son.get("icerik", "")[:60],
+            "mesaj_sayisi": len(mesajlar),
+        })
+    return {"bildirimler": bildirimler, "toplam": len(bildirimler)}
